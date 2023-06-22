@@ -45,7 +45,7 @@ contract VestingWalletWithCliff is VestingWallet {
         if (_isBeforeCliff()) {
             return 0;
         }
-        super.releasable();
+        return super.releasable();
     }
 
     /**
@@ -56,7 +56,7 @@ contract VestingWalletWithCliff is VestingWallet {
         if (_isBeforeCliff()) {
             return 0;
         }
-        super.releasable(token);
+        return super.releasable(token);
     }
 
     /**
