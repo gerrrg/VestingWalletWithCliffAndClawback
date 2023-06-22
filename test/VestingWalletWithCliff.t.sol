@@ -9,6 +9,11 @@ import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 contract VestingWalletWithCliffTest is Test {
     VestingWalletWithCliff public wallet;
 
+    // Foundry does not handle overloaded functions well at all.
+    // Manually entering the function selectors here is the easiest workaround.
+    bytes4 constant releaseSelector = "\x86\xd1\xa6\x9f";
+    bytes4 constant releaseAddressSelector = "\x19\x16\x55\x87";
+
     address provider = vm.addr(0x1);
     address recipient = vm.addr(0x2);
     ERC20 fakeToken;
@@ -25,7 +30,14 @@ contract VestingWalletWithCliffTest is Test {
     }
 
     function _assertAbilityToRelease(bool expectedSuccess) internal {
-        wallet.release(fakeToken);
+        bool success;
+        bytes memory data;
+
+        (success, data) = address(wallet).call(abi.encodeWithSelector(releaseSelector));
+        assert(success == expectedSuccess);
+
+        (success, data) = address(wallet).call(abi.encodeWithSelector(releaseAddressSelector, address(fakeToken)));
+        assert(success == expectedSuccess);
     }
 
     function setUp() public {
