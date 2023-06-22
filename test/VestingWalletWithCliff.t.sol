@@ -31,12 +31,10 @@ contract VestingWalletWithCliffTest is Test {
 
     function _assertAbilityToRelease(bool expectedSuccess) internal {
         bool success;
-        bytes memory data;
-
-        (success, data) = address(wallet).call(abi.encodeWithSelector(releaseSelector));
+        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseSelector));
         assert(success == expectedSuccess);
 
-        (success, data) = address(wallet).call(abi.encodeWithSelector(releaseAddressSelector, address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseAddressSelector, address(fakeToken)));
         assert(success == expectedSuccess);
     }
 
