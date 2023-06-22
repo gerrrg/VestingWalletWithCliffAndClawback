@@ -24,6 +24,10 @@ contract VestingWalletWithCliffTest is Test {
         assert(wallet.releasable(address(fakeToken)) == amount);
     }
 
+    function _assertAbilityToRelease(bool expectedSuccess) internal {
+        wallet.release(fakeToken);
+    }
+
     function setUp() public {
         uint64 startTime = uint64(block.timestamp) + startDelay;
         wallet = new VestingWalletWithCliff(recipient, startTime, vestDuration, cliffDuration);
@@ -51,7 +55,7 @@ contract VestingWalletWithCliffTest is Test {
         _assertReleasableIsAmount(0);
     }
 
-    function testPreCliffReleasableDuringCliffZero() public {
+    function testReleasableDuringCliffZero() public {
         skip(startDelay);
         _assertReleasableIsAmount(0);
 
@@ -59,16 +63,34 @@ contract VestingWalletWithCliffTest is Test {
         _assertReleasableIsAmount(0);
     }
 
-    function testPreCliffReleasableAfterCliffNonZero() public {
+    function testCannotReleaseDuringCliff() public {
+        skip(startDelay);
+        _assertAbilityToRelease(false);
+
+        skip(cliffDuration - 1);
+        _assertAbilityToRelease(false);
+    }
+
+
+    function testReleasableAfterCliffNonZero() public {
         skip(startDelay + cliffDuration);
+        uint256 amount;
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            uint256 amount = amountDeposit * (i - startDelay) / vestDuration;
+            amount = amountDeposit * (i - startDelay) / vestDuration;
             _assertReleasableIsAmount(amount);
             skip(1);
         }
     }
 
-    function testPreCliffReleasableAfterVestFullAmount() public {
+    function testReleaseAfterCliff() public {
+        skip(startDelay + cliffDuration);
+        for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
+            _assertAbilityToRelease(true);
+            skip(1);
+        }
+    }
+
+    function testReleasableAfterVestFullAmount() public {
         vm.warp(startDelay + vestDuration + 1);
         assert(wallet.releasable() == amountDeposit);
         assert(wallet.releasable(address(fakeToken)) == amountDeposit);
