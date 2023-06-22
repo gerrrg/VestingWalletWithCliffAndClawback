@@ -2,13 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/Counter.sol";
+import "../src/VestingWalletWithCliff.sol";
 
-contract CounterTest is Test {
-    Counter public counter;
+contract VestingWalletWithCliffTest is Test {
+    VestingWalletWithCliff public counter;
 
     function setUp() public {
-        counter = new Counter();
+        counter = new VestingWalletWithCliff();
         counter.setNumber(0);
     }
 
