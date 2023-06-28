@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "openzeppelin-contracts/contracts/finance/VestingWallet.sol";
 
-contract VestingWalletWithCliff is VestingWallet {
+contract VestingWalletWithCliffAndClawback is VestingWallet {
 
     error CurrentTimeIsBeforeCliff();
 

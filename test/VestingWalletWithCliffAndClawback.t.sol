@@ -3,11 +3,11 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
-import "../src/VestingWalletWithCliff.sol";
+import "../src/VestingWalletWithCliffAndClawback.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-contract VestingWalletWithCliffTest is Test {
-    VestingWalletWithCliff public wallet;
+contract VestingWalletWithCliffAndClawbackTest is Test {
+    VestingWalletWithCliffAndClawback public wallet;
 
     // Foundry does not handle overloaded functions well at all.
     // Manually entering the function selectors here is the easiest workaround.
@@ -40,7 +40,7 @@ contract VestingWalletWithCliffTest is Test {
 
     function setUp() public {
         uint64 startTime = uint64(block.timestamp) + startDelay;
-        wallet = new VestingWalletWithCliff(recipient, startTime, vestDuration, cliffDuration);
+        wallet = new VestingWalletWithCliffAndClawback(recipient, startTime, vestDuration, cliffDuration);
         vm.deal(provider, 1000 ether);
         vm.deal(recipient, 1 ether);
 
