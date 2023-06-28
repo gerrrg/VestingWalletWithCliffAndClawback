@@ -16,6 +16,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     address provider = vm.addr(0x1);
     address recipient = vm.addr(0x2);
+    address owner = vm.addr(0x3);
     ERC20 fakeToken;
 
     uint256 amountDeposit = 1e18;
@@ -40,7 +41,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     function setUp() public {
         uint64 startTime = uint64(block.timestamp) + startDelay;
-        wallet = new VestingWalletWithCliffAndClawback(recipient, startTime, vestDuration, cliffDuration);
+        wallet = new VestingWalletWithCliffAndClawback(owner, recipient, startTime, vestDuration, cliffDuration);
         vm.deal(provider, 1000 ether);
         vm.deal(recipient, 1 ether);
 

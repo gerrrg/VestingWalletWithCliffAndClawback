@@ -2,8 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "openzeppelin-contracts/contracts/finance/VestingWallet.sol";
+import "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
-contract VestingWalletWithCliffAndClawback is VestingWallet {
+contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
     error CurrentTimeIsBeforeCliff();
 
@@ -21,14 +22,17 @@ contract VestingWalletWithCliffAndClawback is VestingWallet {
      * @dev Set the beneficiary, start timestamp, and vesting duration within VestingWallet base class.
      */
     constructor(
+        address owner,
         address beneficiaryAddress,
         uint64 startTimestamp,
         uint64 durationSeconds,
         uint64 cliffDurationSeconds
     ) payable 
+        Ownable2Step()
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {
         _cliffDuration = cliffDurationSeconds;
+        _transferOwnership(owner);
     }
 
     /**
