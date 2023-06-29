@@ -7,8 +7,21 @@ import "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
     error CurrentTimeIsBeforeCliff();
+    error TokenCannotBeZeroAddress();
+    error NoDirectEthTransfer();
+    error ClawbackHasAlreadyOccurred();
+    error ClawbackHasNotOccurred();
 
     uint256 private immutable _cliffDuration;
+    mapping(address => bool) private _clawbackHasOccurred;
+    mapping(address => uint256) private _cumulativeReleasablePostClawback;
+
+    modifier isNotZeroAddress(address token) {
+        if (token == address(0)) {
+            revert TokenCannotBeZeroAddress();
+        }
+        _;
+    }
 
     modifier isAfterCliff() {
         if (_isBeforeCliff()) {
@@ -18,7 +31,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     }
 
     /**
-     * @dev Set the cliff.
+     * @dev Set the cliff and owner.
      * @dev Set the beneficiary, start timestamp, and vesting duration within VestingWallet base class.
      */
     constructor(
@@ -43,9 +56,62 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     }
 
     /**
+     * @dev Getter for whether a native asset clawback has occurred.
+     */
+    function clawbackHasOccurred() public view virtual returns (bool) {
+        return _clawbackHasOccurred[address(0)];
+    }
+
+    /**
+     * @dev Getter for whether a token clawback has occurred.
+     */
+    function clawbackHasOccurred(address token) public view virtual isNotZeroAddress(token) returns (bool) {
+        return _clawbackHasOccurred[token];
+    }
+
+    function clawback() public onlyOwner {
+        if (clawbackHasOccurred()) {
+            revert ClawbackHasAlreadyOccurred();
+        }
+
+        uint256 releasableNativeAsset = releasable();
+
+        // Store the max cumulative payout to recipient after the the clawback has occurred
+        // Need to store value as cumulative value because `release` only modifies `_released`
+        _cumulativeReleasablePostClawback[address(0)] = released() + releasableNativeAsset;
+
+        // Log that the clawback has occurred
+        _clawbackHasOccurred[address(0)] = true;
+
+        // Send current balance less current redeemable amount back to owner
+        Address.sendValue(payable(owner()), address(this).balance - releasableNativeAsset);
+
+    }
+
+    function clawback(address token) public isNotZeroAddress(token) onlyOwner {
+        if (clawbackHasOccurred(token)) {
+            revert ClawbackHasAlreadyOccurred();
+        }
+        uint256 releasableErc20 = releasable(token);
+
+        // Store the max cumulative payout to recipient after the the clawback has occurred
+        // Need to store value as cumulative value because `release` only modifies `_erc20Released`
+        _cumulativeReleasablePostClawback[token] = released(token) + releasableErc20;
+
+        // Log that the clawback has occurred
+        _clawbackHasOccurred[token] = true;
+
+        // Send current balance less current redeemable amount back to owner
+        SafeERC20.safeTransfer(IERC20(token), owner(), IERC20(token).balanceOf(address(this)) - releasableErc20);
+    }
+
+    /**
      * @dev Override of getter for the amount of releasable eth to return 0 prior to meeting the cliff.
      */
     function releasable() public view override returns (uint256) {
+        if (clawbackHasOccurred()) {
+            return _cumulativeReleasablePostClawback[address(0)] - released();
+        }
         if (_isBeforeCliff()) {
             return 0;
         }
@@ -56,7 +122,10 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      * @dev Override of getter for the amount of releasable `token` tokens to return 0 prior to meeting the cliff.
      * `token` should be the address of an IERC20 contract.
      */
-    function releasable(address token) public view override returns (uint256) {
+    function releasable(address token) public view override isNotZeroAddress(token) returns (uint256) {
+        if (clawbackHasOccurred(token)) {
+            return _cumulativeReleasablePostClawback[token] - released(token);
+        }
         if (_isBeforeCliff()) {
             return 0;
         }
@@ -79,6 +148,28 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      */
     function release(address token) public override isAfterCliff {
         super.release(token);
+    }
+
+    /**
+     * @dev Allow owner to sweep native assets not redeemable by recipient after a clawback has occurred.
+     *
+     */
+    function sweep() public onlyOwner {
+        if (!clawbackHasOccurred()) {
+            revert ClawbackHasNotOccurred();
+        }
+        Address.sendValue(payable(msg.sender), address(this).balance - releasable());
+    }
+
+    /**
+     * @dev Allow owner to sweep tokens not redeemable by recipient after a clawback has occurred.
+     *
+     */
+    function sweep(address token) public onlyOwner {
+        if (!clawbackHasOccurred(token)) {
+            revert ClawbackHasNotOccurred();
+        }
+        SafeERC20.safeTransfer(IERC20(token), msg.sender, IERC20(token).balanceOf(address(this)) - releasable(token));
     }
 
     /**
