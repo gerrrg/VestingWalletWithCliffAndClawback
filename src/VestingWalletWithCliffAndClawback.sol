@@ -4,19 +4,26 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/contracts/finance/VestingWallet.sol";
 import "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
+/**
+ * @title VestingWalletWithCliffAndClawback
+ * @dev This contract builds on OpenZeppelin's VestingWallet. See comments in VestingWallet for base details.
+ *
+ * This contract adds the following functionality:
+ *   - Add a vesting cliff: `recipient` cannot claim any vested tokens until a cliff duration has elapsed
+ *   - Add `owner`: contract is `Ownable2Step`
+ *   - Add clawbacks: contract `owner` can clawback any unvested tokens
+ *   - Add post-clawback sweeps: contract `owner` can sweep any excess tokens sent to the contract after clawback
+ */
 contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
-    event EtherClawedBack(uint256 amount);
     event ERC20ClawedBack(address indexed token, uint256 amount);
-
-    event EtherSwept(uint256 amount);
     event ERC20Swept(address indexed token, uint256 amount);
+    event EtherClawedBack(uint256 amount);
+    event EtherSwept(uint256 amount);
 
-    error CurrentTimeIsBeforeCliff();
-    error TokenCannotBeZeroAddress();
-    error NoDirectEthTransfer();
     error ClawbackHasAlreadyOccurred();
     error ClawbackHasNotOccurred();
+    error CurrentTimeIsBeforeCliff();
 
     uint256 private immutable _cliffDuration;
 
@@ -74,6 +81,11 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         return _erc20ClawbackHasOccurred[token];
     }
 
+    /**
+     * @dev Allow owner to clawback unvested native assets from contract.
+     *
+     * Emits an {EtherClawedBack} event.
+     */
     function clawback() public onlyOwner {
         if (clawbackHasOccurred()) {
             revert ClawbackHasAlreadyOccurred();
@@ -94,6 +106,11 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         emit EtherClawedBack(amount);
     }
 
+    /**
+     * @dev Allow owner to clawback unvested ERC20 tokens from contract.
+     *
+     * Emits an {ERC20ClawedBack} event.
+     */
     function clawback(address token) public onlyOwner {
         if (clawbackHasOccurred(token)) {
             revert ClawbackHasAlreadyOccurred();
@@ -114,7 +131,8 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     }
 
     /**
-     * @dev Override of getter for the amount of releasable eth to return 0 prior to meeting the cliff.
+     * @dev Override of getter for the amount of releasable native assets to return 0 prior to meeting the cliff
+     * and to handle releasing vested assets after a clawback.
      */
     function releasable() public view override returns (uint256) {
         if (clawbackHasOccurred()) {
@@ -127,7 +145,8 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     }
 
     /**
-     * @dev Override of getter for the amount of releasable `token` tokens to return 0 prior to meeting the cliff.
+     * @dev Override of getter for the amount of releasable `token` tokens to return 0 prior to meeting the cliff
+     * and to handle releasing vested assets after a clawback.
      * `token` should be the address of an IERC20 contract.
      */
     function releasable(address token) public view override returns (uint256) {
@@ -141,7 +160,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     }
 
     /**
-     * @dev Release the native token (ether) that have already vested if the cliff has been passed.
+     * @dev Release the native assets that have already vested if the cliff has been passed.
      *
      * Emits a {EtherReleased} event.
      */
@@ -161,6 +180,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     /**
      * @dev Allow owner to sweep native assets not redeemable by recipient after a clawback has occurred.
      *
+     * Emits a {EtherSwept} event.
      */
     function sweep() public onlyOwner {
         if (!clawbackHasOccurred()) {
@@ -176,6 +196,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     /**
      * @dev Allow owner to sweep tokens not redeemable by recipient after a clawback has occurred.
      *
+     * Emits a {ERC20Swept} event.
      */
     function sweep(address token) public onlyOwner {
         if (!clawbackHasOccurred(token)) {
