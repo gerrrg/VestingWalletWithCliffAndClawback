@@ -155,6 +155,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _depositTokensAndEth(provider, amountDeposit);
     }
 
+    function testWalletIsFromFactory() view public {
+        assert(factory.isWalletFromFactory(address(wallet)));
+    }
+
     function testCliffDuration() view public {
         assert(wallet.cliffDuration() == cliffDuration);
     }
