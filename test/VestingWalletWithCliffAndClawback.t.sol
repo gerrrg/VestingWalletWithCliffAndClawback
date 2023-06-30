@@ -4,9 +4,11 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
 import "../src/VestingWalletWithCliffAndClawback.sol";
+import "../src/VestingWalletWithCliffAndClawbackFactory.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 contract VestingWalletWithCliffAndClawbackTest is Test {
+    VestingWalletWithCliffAndClawbackFactory public factory;
     VestingWalletWithCliffAndClawback public wallet;
 
     // Foundry does not handle overloaded functions well at all.
@@ -140,8 +142,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     }
 
     function setUp() public {
-        uint64 startTime = uint64(block.timestamp) + startDelay;
-        wallet = new VestingWalletWithCliffAndClawback(owner, recipient, startTime, vestDuration, cliffDuration);
+        uint64 startTime = uint64(block.timestamp) + startDelay;        
+        factory = new VestingWalletWithCliffAndClawbackFactory();
+        address walletAddress = factory.create(owner, recipient, startTime, vestDuration, cliffDuration);
+        wallet = VestingWalletWithCliffAndClawback(payable(walletAddress));
         vm.deal(provider, 1000 ether);
         vm.deal(recipient, 1 ether);
 
@@ -149,6 +153,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         deal(address(fakeToken), provider, amountDeposit * 2);
 
         _depositTokensAndEth(provider, amountDeposit);
+    }
+
+    function testWalletIsFromFactory() view public {
+        assert(factory.isWalletFromFactory(address(wallet)));
     }
 
     function testCliffDuration() view public {
