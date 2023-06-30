@@ -19,8 +19,8 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     uint256 private _cumulativeReleasablePostClawback;
 
     // Track clawback variables for ERC20 tokens
-    mapping(address => bool) private _clawbackHasOccurredErc20;
-    mapping(address => uint256) private _cumulativeReleasablePostClawbackErc20;
+    mapping(address => bool) private _erc20ClawbackHasOccurred;
+    mapping(address => uint256) private _erc20CumulativeReleasablePostClawback;
 
     modifier isAfterCliff() {
         if (_isBeforeCliff()) {
@@ -65,7 +65,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      * @dev Getter for whether a token clawback has occurred.
      */
     function clawbackHasOccurred(address token) public view virtual returns (bool) {
-        return _clawbackHasOccurredErc20[token];
+        return _erc20ClawbackHasOccurred[token];
     }
 
     function clawback() public onlyOwner {
@@ -95,10 +95,10 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
         // Store the max cumulative payout to recipient after the the clawback has occurred
         // Need to store value as cumulative value because `release` only modifies `_erc20Released`
-        _cumulativeReleasablePostClawbackErc20[token] = released(token) + releasableErc20;
+        _erc20CumulativeReleasablePostClawback[token] = released(token) + releasableErc20;
 
         // Log that the clawback has occurred
-        _clawbackHasOccurredErc20[token] = true;
+        _erc20ClawbackHasOccurred[token] = true;
 
         // Send current balance less current redeemable amount back to owner
         SafeERC20.safeTransfer(IERC20(token), owner(), IERC20(token).balanceOf(address(this)) - releasableErc20);
@@ -123,7 +123,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      */
     function releasable(address token) public view override returns (uint256) {
         if (clawbackHasOccurred(token)) {
-            return _cumulativeReleasablePostClawbackErc20[token] - released(token);
+            return _erc20CumulativeReleasablePostClawback[token] - released(token);
         }
         if (_isBeforeCliff()) {
             return 0;
