@@ -47,7 +47,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      * @dev Set the beneficiary, start timestamp, and vesting duration within VestingWallet base class.
      */
     constructor(
-        address owner,
+        address ownerAddress,
         address beneficiaryAddress,
         uint64 startTimestamp,
         uint64 durationSeconds,
@@ -57,7 +57,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         VestingWallet(beneficiaryAddress, startTimestamp, durationSeconds)
     {
         _cliffDuration = cliffDurationSeconds;
-        _transferOwnership(owner);
+        _transferOwnership(ownerAddress);
     }
 
     /**
