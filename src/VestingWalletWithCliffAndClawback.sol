@@ -13,15 +13,14 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
     error ClawbackHasNotOccurred();
 
     uint256 private immutable _cliffDuration;
-    mapping(address => bool) private _clawbackHasOccurred;
-    mapping(address => uint256) private _cumulativeReleasablePostClawback;
 
-    modifier isNotZeroAddress(address token) {
-        if (token == address(0)) {
-            revert TokenCannotBeZeroAddress();
-        }
-        _;
-    }
+    // Track clawback variables for native asset
+    bool private _clawbackHasOccurred;
+    uint256 private _cumulativeReleasablePostClawback;
+
+    // Track clawback variables for ERC20 tokens
+    mapping(address => bool) private _clawbackHasOccurredErc20;
+    mapping(address => uint256) private _cumulativeReleasablePostClawbackErc20;
 
     modifier isAfterCliff() {
         if (_isBeforeCliff()) {
@@ -59,14 +58,14 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      * @dev Getter for whether a native asset clawback has occurred.
      */
     function clawbackHasOccurred() public view virtual returns (bool) {
-        return _clawbackHasOccurred[address(0)];
+        return _clawbackHasOccurred;
     }
 
     /**
      * @dev Getter for whether a token clawback has occurred.
      */
-    function clawbackHasOccurred(address token) public view virtual isNotZeroAddress(token) returns (bool) {
-        return _clawbackHasOccurred[token];
+    function clawbackHasOccurred(address token) public view virtual returns (bool) {
+        return _clawbackHasOccurredErc20[token];
     }
 
     function clawback() public onlyOwner {
@@ -78,17 +77,17 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
         // Store the max cumulative payout to recipient after the the clawback has occurred
         // Need to store value as cumulative value because `release` only modifies `_released`
-        _cumulativeReleasablePostClawback[address(0)] = released() + releasableNativeAsset;
+        _cumulativeReleasablePostClawback = released() + releasableNativeAsset;
 
         // Log that the clawback has occurred
-        _clawbackHasOccurred[address(0)] = true;
+        _clawbackHasOccurred = true;
 
         // Send current balance less current redeemable amount back to owner
         Address.sendValue(payable(owner()), address(this).balance - releasableNativeAsset);
 
     }
 
-    function clawback(address token) public isNotZeroAddress(token) onlyOwner {
+    function clawback(address token) public onlyOwner {
         if (clawbackHasOccurred(token)) {
             revert ClawbackHasAlreadyOccurred();
         }
@@ -96,10 +95,10 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
         // Store the max cumulative payout to recipient after the the clawback has occurred
         // Need to store value as cumulative value because `release` only modifies `_erc20Released`
-        _cumulativeReleasablePostClawback[token] = released(token) + releasableErc20;
+        _cumulativeReleasablePostClawbackErc20[token] = released(token) + releasableErc20;
 
         // Log that the clawback has occurred
-        _clawbackHasOccurred[token] = true;
+        _clawbackHasOccurredErc20[token] = true;
 
         // Send current balance less current redeemable amount back to owner
         SafeERC20.safeTransfer(IERC20(token), owner(), IERC20(token).balanceOf(address(this)) - releasableErc20);
@@ -110,7 +109,7 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      */
     function releasable() public view override returns (uint256) {
         if (clawbackHasOccurred()) {
-            return _cumulativeReleasablePostClawback[address(0)] - released();
+            return _cumulativeReleasablePostClawback - released();
         }
         if (_isBeforeCliff()) {
             return 0;
@@ -122,9 +121,9 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
      * @dev Override of getter for the amount of releasable `token` tokens to return 0 prior to meeting the cliff.
      * `token` should be the address of an IERC20 contract.
      */
-    function releasable(address token) public view override isNotZeroAddress(token) returns (uint256) {
+    function releasable(address token) public view override returns (uint256) {
         if (clawbackHasOccurred(token)) {
-            return _cumulativeReleasablePostClawback[token] - released(token);
+            return _cumulativeReleasablePostClawbackErc20[token] - released(token);
         }
         if (_isBeforeCliff()) {
             return 0;
