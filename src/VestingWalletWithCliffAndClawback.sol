@@ -6,6 +6,12 @@ import "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
 contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
 
+    event EtherClawedBack(uint256 amount);
+    event ERC20ClawedBack(address indexed token, uint256 amount);
+
+    event EtherSwept(uint256 amount);
+    event ERC20Swept(address indexed token, uint256 amount);
+
     error CurrentTimeIsBeforeCliff();
     error TokenCannotBeZeroAddress();
     error NoDirectEthTransfer();
@@ -83,8 +89,9 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         _clawbackHasOccurred = true;
 
         // Send current balance less current redeemable amount back to owner
-        Address.sendValue(payable(owner()), address(this).balance - releasableNativeAsset);
-
+        uint256 amount = address(this).balance - releasableNativeAsset;
+        Address.sendValue(payable(msg.sender), amount);
+        emit EtherClawedBack(amount);
     }
 
     function clawback(address token) public onlyOwner {
@@ -101,7 +108,9 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         _erc20ClawbackHasOccurred[token] = true;
 
         // Send current balance less current redeemable amount back to owner
-        SafeERC20.safeTransfer(IERC20(token), owner(), IERC20(token).balanceOf(address(this)) - releasableErc20);
+        uint256 amount = IERC20(token).balanceOf(address(this)) - releasableErc20;
+        SafeERC20.safeTransfer(IERC20(token), msg.sender, amount);
+        emit ERC20ClawedBack(token, amount);
     }
 
     /**
@@ -157,7 +166,11 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         if (!clawbackHasOccurred()) {
             revert ClawbackHasNotOccurred();
         }
-        Address.sendValue(payable(msg.sender), address(this).balance - releasable());
+
+        // Sweep current balance less current redeemable amount back to owner
+        uint256 amount = address(this).balance - releasable();
+        Address.sendValue(payable(msg.sender), amount);
+        emit EtherSwept(amount);
     }
 
     /**
@@ -168,7 +181,11 @@ contract VestingWalletWithCliffAndClawback is VestingWallet, Ownable2Step {
         if (!clawbackHasOccurred(token)) {
             revert ClawbackHasNotOccurred();
         }
-        SafeERC20.safeTransfer(IERC20(token), msg.sender, IERC20(token).balanceOf(address(this)) - releasable(token));
+
+        // Sweep current balance less current redeemable amount back to owner
+        uint256 amount = IERC20(token).balanceOf(address(this)) - releasable(token);
+        SafeERC20.safeTransfer(IERC20(token), msg.sender, amount);
+        emit ERC20Swept(token, amount);
     }
 
     /**
