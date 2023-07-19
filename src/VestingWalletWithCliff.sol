@@ -20,8 +20,7 @@ abstract contract VestingWalletWithCliff is VestingWallet {
      * @dev Set the cliff and owner.
      * @dev Set the beneficiary, start timestamp, and vesting duration within VestingWallet base class.
      */
-    constructor(uint64 cliffDurationSeconds)
-    {
+    constructor(uint64 cliffDurationSeconds) {
         _cliffDuration = cliffDurationSeconds;
     }
 
