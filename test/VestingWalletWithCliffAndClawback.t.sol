@@ -105,6 +105,18 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsEqual(amount, owner, _sweep);
     }
 
+    function _assertReleasableAndProceedsFromReleaseEqual(uint256 amount) internal {
+        _assertReleasableIsAmount(amount);
+        _assertProceedsEqual(amount, recipient, _release);
+        _assertReleasableIsAmount(0);
+    }
+
+    function _assertProceedsFromReleaseMatchReleasable() internal {
+        uint256 amount = _getReleasableAmount();
+        _assertProceedsEqual(amount, recipient, _release);
+        _assertReleasableIsAmount(0);
+    }
+
     function _depositTokensAndEth(address user, uint256 amount) internal {
         vm.prank(user);
         (bool success, ) = address(wallet).call{value: amount}("");
@@ -141,24 +153,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         assert(wallet.cliffDuration() == cliffDuration);
     }
 
-    function testPreCliffReleasableZero() view public {
-        _assertReleasableIsAmount(0);
-    }
-
-    function testReleasableDuringCliffZero() public {
-        skip(startDelay);
-        _assertReleasableIsAmount(0);
-
-        skip(cliffDuration - 1);
-        _assertReleasableIsAmount(0);
-    }
-
     function testNothingReleasedBeforeCliff() public {
+        _assertReleasableAndProceedsFromReleaseEqual(0);
+
         skip(startDelay);
-        _assertProceedsFromReleaseEqual(0);
+        _assertReleasableAndProceedsFromReleaseEqual(0);
 
         skip(cliffDuration - 1);
-        _assertProceedsFromReleaseEqual(0);
+        _assertReleasableAndProceedsFromReleaseEqual(0);
     }
 
     function testReleasableAfterCliffNonZero() public {
@@ -174,14 +176,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function testReleaseAfterCliff() public {
         skip(startDelay + cliffDuration);
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            _assertProceedsFromReleaseEqual(_getReleasableAmount());
+            _assertProceedsFromReleaseMatchReleasable();
             skip(1);
         }
     }
 
     function testReleasableAfterVestFullAmount() public {
         skip(startDelay + vestDuration);
-        _assertReleasableIsAmount(amountDeposit);
+        _assertReleasableAndProceedsFromReleaseEqual(amountDeposit);
     }
 
     // Only owner can clawback
@@ -213,7 +215,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsFromClawbackEqual(amountDeposit - claimable);
 
         // Run and verify release
-        _assertProceedsFromReleaseEqual(claimable);
+        _assertReleasableAndProceedsFromReleaseEqual(claimable);
 
         _assertClawbackHasOccurred(true);
     }
@@ -228,7 +230,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsFromClawbackEqual(0);
 
         // Run and verify release
-        _assertProceedsFromReleaseEqual(amountDeposit);
+        _assertReleasableAndProceedsFromReleaseEqual(amountDeposit);
 
         _assertClawbackHasOccurred(true);
     }
@@ -260,7 +262,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _clawback(owner);
 
         _depositTokensAndEth(provider, amountDeposit);
-        _assertReleasableIsAmount(0); // ensure recipient can't get it
+        _assertReleasableAndProceedsFromReleaseEqual(0); // ensure recipient can't get it
 
         // Sweep after deposit after clawback
         _assertProceedsFromSweepEqual(amountDeposit);
