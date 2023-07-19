@@ -11,17 +11,6 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     VestingWalletWithCliffAndClawbackFactory public factory;
     VestingWalletWithCliffAndClawback public wallet;
 
-    // Foundry does not handle overloaded functions well at all.
-    // Manually entering the function selectors here is the easiest workaround.
-    bytes4 constant releaseSelector = "\x86\xd1\xa6\x9f";
-    bytes4 constant releaseAddressSelector = "\x19\x16\x55\x87";
-    bytes4 constant clawbackSelector = "\x25\x26\xd9\x60";
-    bytes4 constant clawbackAddressSelector = "\xed\xf6\x85\x58";
-    bytes4 constant sweepSelector = "\x35\xfa\xa4\x16";
-    bytes4 constant sweepAddressSelector = "\x01\x68\x1a\x62";
-    bytes4 constant clawbackHasOccurredSelector = "\x37\x29\xc2\x21";
-    bytes4 constant clawbackHasOccurredAddressSelector = "\x0e\x9f\x2b\xea";
-
     address provider = vm.addr(0x1);
     address recipient = vm.addr(0x2);
     address owner = vm.addr(0x3);
@@ -100,10 +89,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     function _assertAbilityToRelease(bool expectedSuccess) internal {
         bool success;
-        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseSelector));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("release()"));
         assert(success == expectedSuccess);
 
-        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseAddressSelector, address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("release(address)", address(fakeToken)));
         assert(success == expectedSuccess);
     }
 
@@ -111,11 +100,11 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         bool success;
 
         vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(clawbackSelector));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("clawback()"));
         assert(success == expectedSuccess);
 
         vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(clawbackAddressSelector, address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("clawback(address)", address(fakeToken)));
         assert(success == expectedSuccess);
     }
 
@@ -123,11 +112,11 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         bool success;
 
         vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(sweepSelector));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("sweep()"));
         assert(success == expectedSuccess);
 
         vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(sweepAddressSelector, address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSignature("sweep(address)", address(fakeToken)));
         assert(success == expectedSuccess);
     }
 
