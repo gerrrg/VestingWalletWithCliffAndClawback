@@ -80,37 +80,32 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsEqual(amount, owner, _sweep);
     }
 
-    function _assertAbilityToRelease(bool expectedSuccess) internal {
+    function _assertAbilityTo(string memory funcName, bool expectedSuccess) internal {
         bool success;
-        (success, ) = address(wallet).call(abi.encodeWithSignature("release()"));
+
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "()")));
         assert(success == expectedSuccess);
 
-        (success, ) = address(wallet).call(abi.encodeWithSignature("release(address)", address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "(address)"), address(fakeToken)));
         assert(success == expectedSuccess);
+    }
+
+    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
+        vm.startPrank(user);
+        _assertAbilityTo(funcName, expectedSuccess);
+        vm.stopPrank();
+    }
+
+    function _assertAbilityToRelease(bool expectedSuccess) internal {
+        _assertAbilityTo("release", expectedSuccess);
     }
 
     function _assertAbilityToClawback(address user, bool expectedSuccess) internal {
-        bool success;
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSignature("clawback()"));
-        assert(success == expectedSuccess);
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSignature("clawback(address)", address(fakeToken)));
-        assert(success == expectedSuccess);
+        _assertAbilityTo("clawback", user, expectedSuccess);
     }
 
     function _assertAbilityToSweep(address user, bool expectedSuccess) internal {
-        bool success;
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSignature("sweep()"));
-        assert(success == expectedSuccess);
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSignature("sweep(address)", address(fakeToken)));
-        assert(success == expectedSuccess);
+        _assertAbilityTo("sweep", user, expectedSuccess);
     }
 
     function _depositTokensAndEth(address user, uint256 amt) internal {
