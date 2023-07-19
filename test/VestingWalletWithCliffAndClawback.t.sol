@@ -79,7 +79,6 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         assert(postBalanceToken - prevBalanceToken == amount);
     }
 
-
     function _assertProceedsFromSweepEqual(uint256 amount) internal {
         (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(owner);
         _sweep(owner);
@@ -173,7 +172,6 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         skip(cliffDuration - 1);
         _assertReleasableIsAmount(0);
     }
-
 
     function testReleasableAfterCliffNonZero() public {
         skip(startDelay + cliffDuration);
