@@ -14,7 +14,7 @@ abstract contract VestingWalletWithCliff is VestingWallet {
 
     error CurrentTimeIsBeforeCliff();
 
-    uint256 private immutable _cliffDuration;
+    uint64 private immutable _cliffDuration;
 
     modifier isAfterCliff() {
         if (_isBeforeCliff()) {
@@ -82,6 +82,6 @@ abstract contract VestingWalletWithCliff is VestingWallet {
      * @dev Returns `true` if the current time is before the cliff.
      */
     function _isBeforeCliff() internal view returns (bool) {
-        return block.timestamp < (start() + cliffDuration());
+        return uint64(block.timestamp) < (start() + cliffDuration());
     }
 }
