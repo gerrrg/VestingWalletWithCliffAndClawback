@@ -59,5 +59,4 @@ contract VestingWalletWithCliffAndClawback is VestingWalletWithCliff, VestingWal
     {
         return super._vestingSchedule(totalAllocation, timestamp);
     }
-
 }
