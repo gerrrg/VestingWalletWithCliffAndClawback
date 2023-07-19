@@ -42,16 +42,9 @@ abstract contract VestingWalletWithCliff is VestingWallet {
         override
         returns (uint256)
     {
-        if (_isBeforeCliff()) {
+        if (uint64(block.timestamp) < (start() + cliffDuration())) {
             return 0;
         }
         return super._vestingSchedule(totalAllocation, timestamp);
-    }
-
-    /**
-     * @dev Returns `true` if the current time is before the cliff.
-     */
-    function _isBeforeCliff() internal view returns (bool) {
-        return uint64(block.timestamp) < (start() + cliffDuration());
     }
 }
