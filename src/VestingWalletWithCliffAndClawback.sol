@@ -31,18 +31,15 @@ contract VestingWalletWithCliffAndClawback is VestingWalletWithCliff, VestingWal
         VestingWalletWithCliff(cliffDurationSeconds)
         VestingWalletWithClawback(ownerAddress)
     {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
-    /**
-     * @dev Override for `releasable()` to stack logic respectively from VestingWalletWith{Cliff,Clawback}.
-     */
+    /// @inheritdoc VestingWalletWithClawback
     function releasable() public view override(VestingWallet, VestingWalletWithClawback) returns (uint256) {
         return super.releasable();
     }
 
-    /**
-     * @dev Override for `releasable(token)` to stack logic respectively from VestingWalletWith{Cliff,Clawback}.
-     */
+    /// @inheritdoc VestingWalletWithClawback
     function releasable(address token)
         public
         view
@@ -52,9 +49,7 @@ contract VestingWalletWithCliffAndClawback is VestingWalletWithCliff, VestingWal
         return super.releasable(token);
     }
 
-    /**
-     * @dev Override of VestingWallet's _vestingSchedule to enforce releasing nothing before the cliff has passed.
-     */
+    /// @inheritdoc VestingWalletWithCliff
     function _vestingSchedule(uint256 totalAllocation, uint64 timestamp)
         internal
         view
