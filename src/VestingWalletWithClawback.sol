@@ -88,6 +88,7 @@ abstract contract VestingWalletWithClawback is VestingWallet, Ownable2Step {
         if (clawbackHasOccurred(token)) {
             revert ClawbackHasAlreadyOccurred();
         }
+
         uint256 releasableErc20 = releasable(token);
 
         // Store the max cumulative payout to recipient after the the clawback has occurred
