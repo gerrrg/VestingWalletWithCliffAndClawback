@@ -34,9 +34,7 @@ abstract contract VestingWalletWithClawback is VestingWallet, Ownable2Step {
     /**
      * @dev Set the owner.
      */
-    constructor(
-        address ownerAddress
-    ) payable 
+    constructor(address ownerAddress)
         Ownable2Step()
     {
         _transferOwnership(ownerAddress);
