@@ -59,33 +59,25 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         vm.stopPrank();
     }
 
-    function _assertProceedsFromClawbackEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(owner);
-        _clawback(owner);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(owner);
+    function _assertProceedsEqual(uint256 amount, address user, function (address) func) internal {
+        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(user);
+        func(user);
+        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(user);
 
-        // Owner gets their tokens back
         assert(postBalanceEth - prevBalanceEth == amount);
         assert(postBalanceToken - prevBalanceToken == amount);
+    }
+
+    function _assertProceedsFromClawbackEqual(uint256 amount) internal {
+        _assertProceedsEqual(amount, owner, _clawback);
     }
 
     function _assertProceedsFromReleaseEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(recipient);
-        _release(recipient);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(recipient);
-
-        // Owner gets their tokens back
-        assert(postBalanceEth - prevBalanceEth == amount);
-        assert(postBalanceToken - prevBalanceToken == amount);
+        _assertProceedsEqual(amount, recipient, _release);
     }
 
     function _assertProceedsFromSweepEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(owner);
-        _sweep(owner);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(owner);
-
-        assert(postBalanceEth - prevBalanceEth == amount);
-        assert(postBalanceToken - prevBalanceToken == amount);
+        _assertProceedsEqual(amount, owner, _sweep);
     }
 
     function _assertAbilityToRelease(bool expectedSuccess) internal {
