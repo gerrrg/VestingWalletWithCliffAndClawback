@@ -38,6 +38,15 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         return (address(user).balance, fakeToken.balanceOf(user));
     }
 
+    function _getReleasableAmount() internal view returns (uint256) {
+        uint256 amount = wallet.releasable();
+
+        // ETH and ERC20 amounts should be the same
+        assert(wallet.releasable(address(fakeToken)) == amount);
+
+        return amount;
+    }
+
     function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
         vm.startPrank(user);
         bool success;
@@ -165,15 +174,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function testReleaseAfterCliff() public {
         skip(startDelay + cliffDuration);
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            _assertProceedsFromReleaseEqual(wallet.releasable());
+            _assertProceedsFromReleaseEqual(_getReleasableAmount());
             skip(1);
         }
     }
 
     function testReleasableAfterVestFullAmount() public {
         skip(startDelay + vestDuration);
-        assert(wallet.releasable() == amountDeposit);
-        assert(wallet.releasable(address(fakeToken)) == amountDeposit);
+        _assertReleasableIsAmount(amountDeposit);
     }
 
     // Only owner can clawback
@@ -196,16 +204,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
         skip(startDelay + cliffDuration + vestDuration/2);
 
-        uint256 claimableNative = wallet.releasable();
-        uint256 claimableERC20 = wallet.releasable(address(fakeToken));
-        assert(claimableNative == claimableERC20);
-        assert(claimableNative != 0);
+        uint256 claimable = _getReleasableAmount();
+        assert(claimable != 0);
 
         // Run and verify clawback
-        _assertProceedsFromClawbackEqual(amountDeposit - claimableNative);
+        _assertProceedsFromClawbackEqual(amountDeposit - claimable);
 
         // Run and verify release
-        _assertProceedsFromReleaseEqual(claimableNative);
+        _assertProceedsFromReleaseEqual(claimable);
 
         _assertClawbackHasOccurred(true);
     }
