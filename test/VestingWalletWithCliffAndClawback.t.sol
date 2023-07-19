@@ -191,6 +191,8 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertAbilityToClawback(owner, true);
     }
 
+    // TODO: Test release users too. But this feature must be added first!
+
     // Clawback before cliff should return everything
     function testImmediateClawback() public {
         _assertClawbackHasOccurred(false);
