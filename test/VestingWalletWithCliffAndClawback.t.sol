@@ -101,8 +101,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         (bool success, ) = address(wallet).call{value: amount}("");
         assert(success);
         assert(amount == address(wallet).balance);
+
         vm.prank(user);
-        fakeToken.transfer(address(wallet), amount);
+        success = fakeToken.transfer(address(wallet), amount);
+        assert(success);
         assert(amount == fakeToken.balanceOf(address(wallet)));
     }
 
