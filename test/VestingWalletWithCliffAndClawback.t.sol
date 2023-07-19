@@ -38,6 +38,31 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         return (address(user).balance, fakeToken.balanceOf(user));
     }
 
+    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
+        vm.startPrank(user);
+        bool success;
+
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "()")));
+        assert(success == expectedSuccess);
+
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "(address)"), address(fakeToken)));
+        assert(success == expectedSuccess);
+
+        vm.stopPrank();
+    }
+
+    function _assertAbilityToRelease(address user, bool expectedSuccess) internal {
+        _assertAbilityTo("release", user, expectedSuccess);
+    }
+
+    function _assertAbilityToClawback(address user, bool expectedSuccess) internal {
+        _assertAbilityTo("clawback", user, expectedSuccess);
+    }
+
+    function _assertAbilityToSweep(address user, bool expectedSuccess) internal {
+        _assertAbilityTo("sweep", user, expectedSuccess);
+    }
+
     function _clawback(address user) internal {
         _assertAbilityToClawback(user, true);
     }
@@ -69,31 +94,6 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     function _assertProceedsFromSweepEqual(uint256 amount) internal {
         _assertProceedsEqual(amount, owner, _sweep);
-    }
-
-    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
-        vm.startPrank(user);
-        bool success;
-
-        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "()")));
-        assert(success == expectedSuccess);
-
-        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "(address)"), address(fakeToken)));
-        assert(success == expectedSuccess);
-
-        vm.stopPrank();
-    }
-
-    function _assertAbilityToRelease(address user, bool expectedSuccess) internal {
-        _assertAbilityTo("release", user, expectedSuccess);
-    }
-
-    function _assertAbilityToClawback(address user, bool expectedSuccess) internal {
-        _assertAbilityTo("clawback", user, expectedSuccess);
-    }
-
-    function _assertAbilityToSweep(address user, bool expectedSuccess) internal {
-        _assertAbilityTo("sweep", user, expectedSuccess);
     }
 
     function _depositTokensAndEth(address user, uint256 amount) internal {
