@@ -146,10 +146,10 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     function testNothingReleasedBeforeCliff() public {
         skip(startDelay);
-        _assertReleasableIsAmount(0);
+        _assertProceedsFromReleaseEqual(0);
 
         skip(cliffDuration - 1);
-        _assertReleasableIsAmount(0);
+        _assertProceedsFromReleaseEqual(0);
     }
 
     function testReleasableAfterCliffNonZero() public {
