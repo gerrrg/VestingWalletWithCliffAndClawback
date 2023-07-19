@@ -36,7 +36,7 @@ contract VestingWalletWithCliffAndClawback is VestingWalletWithCliff, VestingWal
     /**
      * @dev Override for `releasable()` to stack logic respectively from VestingWalletWith{Cliff,Clawback}.
      */
-    function releasable() public view override(VestingWalletWithCliff, VestingWalletWithClawback) returns (uint256) {
+    function releasable() public view override(VestingWallet, VestingWalletWithClawback) returns (uint256) {
         return super.releasable();
     }
 
@@ -46,25 +46,23 @@ contract VestingWalletWithCliffAndClawback is VestingWalletWithCliff, VestingWal
     function releasable(address token)
         public
         view
-        override(VestingWalletWithCliff, VestingWalletWithClawback)
+        override(VestingWallet, VestingWalletWithClawback)
         returns (uint256)
     {
         return super.releasable(token);
     }
 
     /**
-     * @dev Override for `release()` to use VestingWalletWithCliff w/ cliff modifier.
+     * @dev Override of VestingWallet's _vestingSchedule to enforce releasing nothing before the cliff has passed.
      */
-    function release() public override(VestingWallet, VestingWalletWithCliff) {
-        super.release();
+    function _vestingSchedule(uint256 totalAllocation, uint64 timestamp)
+        internal
+        view
+        virtual
+        override(VestingWallet, VestingWalletWithCliff)
+        returns (uint256)
+    {
+        return super._vestingSchedule(totalAllocation, timestamp);
     }
-
-    /**
-     * @dev Override for `release(token)` to use VestingWalletWithCliff w/ cliff modifier.
-     */
-    function release(address token) public override(VestingWallet, VestingWalletWithCliff) {
-        super.release(token);
-    }
-
 
 }
