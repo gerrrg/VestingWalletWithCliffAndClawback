@@ -241,6 +241,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
         _clawback(owner);
 
+        // Only owner can sweep after clawback
         _assertAbilityToSweep(provider, false);
         _assertAbilityToSweep(recipient, false);
         _assertAbilityToSweep(owner, true);
