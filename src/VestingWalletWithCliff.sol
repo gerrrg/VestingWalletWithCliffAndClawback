@@ -16,13 +16,6 @@ abstract contract VestingWalletWithCliff is VestingWallet {
 
     uint64 private immutable _cliffDuration;
 
-    modifier isAfterCliff() {
-        if (_isBeforeCliff()) {
-            revert CurrentTimeIsBeforeCliff();
-        }
-        _;
-    }
-
     /**
      * @dev Set the cliff and owner.
      * @dev Set the beneficiary, start timestamp, and vesting duration within VestingWallet base class.
@@ -40,42 +33,19 @@ abstract contract VestingWalletWithCliff is VestingWallet {
     }
 
     /**
-     * @dev Override of getter for the amount of releasable native assets to return 0 prior to meeting the cliff.
+     * @dev Override of VestingWallet's `_vestingSchedule` to enforce releasing nothing until the cliff has passed.
      */
-    function releasable() public view virtual override returns (uint256) {
+    function _vestingSchedule(uint256 totalAllocation, uint64 timestamp)
+        internal
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         if (_isBeforeCliff()) {
             return 0;
         }
-        return super.releasable();
-    }
-
-    /**
-     * @dev Override of getter for the amount of releasable `token` tokens to return 0 prior to meeting the cliff.
-     * `token` should be the address of an IERC20 contract.
-     */
-    function releasable(address token) public view virtual override returns (uint256) {
-        if (_isBeforeCliff()) {
-            return 0;
-        }
-        return super.releasable(token);
-    }
-
-    /**
-     * @dev Release the native assets that have already vested if the cliff has been passed.
-     *
-     * Emits a {EtherReleased} event.
-     */
-    function release() public virtual override isAfterCliff {
-        super.release();
-    }
-
-    /**
-     * @dev Release the tokens that have already vested if the cliff has been passed.
-     *
-     * Emits a {ERC20Released} event.
-     */
-    function release(address token) public virtual override isAfterCliff {
-        super.release(token);
+        return super._vestingSchedule(totalAllocation, timestamp);
     }
 
     /**
