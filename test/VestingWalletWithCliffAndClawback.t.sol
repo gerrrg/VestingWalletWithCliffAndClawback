@@ -108,14 +108,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertAbilityTo("sweep", user, expectedSuccess);
     }
 
-    function _depositTokensAndEth(address user, uint256 amt) internal {
+    function _depositTokensAndEth(address user, uint256 amount) internal {
         vm.prank(user);
-        (bool success, ) = address(wallet).call{value: amt}("");
+        (bool success, ) = address(wallet).call{value: amount}("");
         assert(success);
-        assert(amt == address(wallet).balance);
+        assert(amount == address(wallet).balance);
         vm.prank(user);
-        fakeToken.transfer(address(wallet), amt);
-        assert(amt == fakeToken.balanceOf(address(wallet)));
+        fakeToken.transfer(address(wallet), amount);
+        assert(amount == fakeToken.balanceOf(address(wallet)));
     }
 
     function setUp() public {
