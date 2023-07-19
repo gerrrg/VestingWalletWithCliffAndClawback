@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
+import "forge-std/Test.sol";
+
+import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
 import "../src/VestingWalletWithCliffAndClawback.sol";
 import "../src/VestingWalletWithCliffAndClawbackFactory.sol";
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 contract VestingWalletWithCliffAndClawbackTest is Test {
     VestingWalletWithCliffAndClawbackFactory public factory;
