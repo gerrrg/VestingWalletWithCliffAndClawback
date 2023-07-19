@@ -39,24 +39,15 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     }
 
     function _clawback(address user) internal {
-        vm.startPrank(user);
-        wallet.clawback();
-        wallet.clawback(address(fakeToken));
-        vm.stopPrank();
+        _assertAbilityToClawback(user, true);
     }
 
     function _release(address user) internal {
-        vm.startPrank(user);
-        wallet.release();
-        wallet.release(address(fakeToken));
-        vm.stopPrank();
+        _assertAbilityToRelease(user, true);
     }
 
     function _sweep(address user) internal {
-        vm.startPrank(user);
-        wallet.sweep();
-        wallet.sweep(address(fakeToken));
-        vm.stopPrank();
+        _assertAbilityToSweep(user, true);
     }
 
     function _assertProceedsEqual(uint256 amount, address user, function (address) func) internal {
@@ -80,7 +71,8 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsEqual(amount, owner, _sweep);
     }
 
-    function _assertAbilityTo(string memory funcName, bool expectedSuccess) internal {
+    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
+        vm.startPrank(user);
         bool success;
 
         (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "()")));
@@ -88,16 +80,12 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
         (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "(address)"), address(fakeToken)));
         assert(success == expectedSuccess);
-    }
 
-    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
-        vm.startPrank(user);
-        _assertAbilityTo(funcName, expectedSuccess);
         vm.stopPrank();
     }
 
-    function _assertAbilityToRelease(bool expectedSuccess) internal {
-        _assertAbilityTo("release", expectedSuccess);
+    function _assertAbilityToRelease(address user, bool expectedSuccess) internal {
+        _assertAbilityTo("release", user, expectedSuccess);
     }
 
     function _assertAbilityToClawback(address user, bool expectedSuccess) internal {
@@ -173,7 +161,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function testReleaseAfterCliff() public {
         skip(startDelay + cliffDuration);
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            _assertAbilityToRelease(true);
+            _assertAbilityToRelease(recipient, true);
             skip(1);
         }
     }
