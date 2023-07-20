@@ -4,27 +4,26 @@ pragma solidity ^0.8.13;
 import "./BaseVestingWalletFactory.sol";
 
 /**
- * @title VestingWalletWithCliffAndClawbackFactory
+ * @title OpinionatedVestingWalletFactory
  * @dev Factory for VestingWalletWithCliffAndClawback. See VestingWalletWithCliffAndClawback.sol for details.
+ *      This factory creates wallets with 4-year vesting and a 1-year cliff.
  */
-contract VestingWalletWithCliffAndClawbackFactory is BaseVestingWalletFactory {
+contract OpinionatedVestingWalletFactory is BaseVestingWalletFactory {
 
     /**
-     * @dev Creates, logs, and registers a new VestingWalletWithCliffAndClawback.
+     * @dev Creates a new VestingWalletWithCliffAndClawback with 4-year vesting and 1-year cliff.
      */
     function create(
         address ownerAddress,
         address beneficiaryAddress,
-        uint64 startTimestamp,
-        uint64 durationSeconds,
-        uint64 cliffDurationSeconds
+        uint64 startTimestamp
     ) public virtual returns (address) {
         return _create(
             ownerAddress,
             beneficiaryAddress,
             startTimestamp,
-            durationSeconds,
-            cliffDurationSeconds
+            4 * 52 weeks, // `years` and `months` are deprecated
+            52 weeks
         );
     }
 }
