@@ -8,7 +8,7 @@ import "openzeppelin-contracts/contracts/finance/VestingWallet.sol";
  * @dev This contract builds on OpenZeppelin's VestingWallet. See comments in VestingWallet for base details.
  *
  * This contract adds the following functionality:
- *   - Add a vesting cliff: `recipient` cannot claim any vested tokens until a cliff duration has elapsed
+ *   - Add a vesting cliff: `beneficiary` cannot claim any vested tokens until a cliff duration has elapsed
  */
 abstract contract VestingWalletWithCliff is VestingWallet {
 
