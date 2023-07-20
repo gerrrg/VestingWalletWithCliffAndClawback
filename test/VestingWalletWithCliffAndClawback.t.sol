@@ -111,7 +111,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertReleasableIsAmount(0);
     }
 
-    function _assertProceedsFromReleaseMatchReleasable() internal {
+    function _assertProceedsFromReleaseEqualReleasable() internal {
         uint256 amount = _getReleasableAmount();
         _assertProceedsEqual(amount, recipient, _release);
         _assertReleasableIsAmount(0);
@@ -176,7 +176,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function testReleaseAfterCliff() public {
         skip(startDelay + cliffDuration);
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            _assertProceedsFromReleaseMatchReleasable();
+            _assertProceedsFromReleaseEqualReleasable();
             skip(1);
         }
     }
