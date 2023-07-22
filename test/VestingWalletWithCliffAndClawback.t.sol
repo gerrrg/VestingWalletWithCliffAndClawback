@@ -14,7 +14,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     VestingWalletWithCliffAndClawback public wallet;
 
     address provider = vm.addr(0x1);
-    address recipient = vm.addr(0x2);
+    address beneficiary = vm.addr(0x2);
     address owner = vm.addr(0x3);
     ERC20 fakeToken;
 
@@ -98,7 +98,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     }
 
     function _assertProceedsFromReleaseEqual(uint256 amount) internal {
-        _assertProceedsEqual(amount, recipient, _release);
+        _assertProceedsEqual(amount, beneficiary, _release);
     }
 
     function _assertProceedsFromSweepEqual(uint256 amount) internal {
@@ -107,13 +107,13 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
     function _assertReleasableAndProceedsFromReleaseEqual(uint256 amount) internal {
         _assertReleasableIsAmount(amount);
-        _assertProceedsEqual(amount, recipient, _release);
+        _assertProceedsEqual(amount, beneficiary, _release);
         _assertReleasableIsAmount(0);
     }
 
     function _assertProceedsFromReleaseEqualReleasable() internal {
         uint256 amount = _getReleasableAmount();
-        _assertProceedsEqual(amount, recipient, _release);
+        _assertProceedsEqual(amount, beneficiary, _release);
         _assertReleasableIsAmount(0);
     }
 
@@ -133,11 +133,11 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         uint64 startTime = uint64(block.timestamp) + startDelay;        
 
         factory = new VestingWalletWithCliffAndClawbackFactory();
-        address walletAddress = factory.create(owner, recipient, startTime, vestDuration, cliffDuration);
+        address walletAddress = factory.create(owner, beneficiary, startTime, vestDuration, cliffDuration);
         wallet = VestingWalletWithCliffAndClawback(payable(walletAddress));
 
         vm.deal(provider, 1000 ether);
-        vm.deal(recipient, 1 ether);
+        vm.deal(beneficiary, 1 ether);
 
         fakeToken = new ERC20("Fake Token", "FAKE");
         deal(address(fakeToken), provider, amountDeposit * 2);
@@ -189,11 +189,16 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     // Only owner can clawback
     function testClawbackUsers() public {
         _assertAbilityToClawback(provider, false);
-        _assertAbilityToClawback(recipient, false);
+        _assertAbilityToClawback(beneficiary, false);
         _assertAbilityToClawback(owner, true);
     }
 
-    // TODO: Test release users too. But this feature must be added first!
+    // Only beneficiary can release
+    function testReleaseUsers() public {
+        _assertAbilityToRelease(provider, false);
+        _assertAbilityToRelease(beneficiary, true);
+        _assertAbilityToRelease(owner, false);
+    }
 
     // Clawback before cliff should return everything
     function testImmediateClawback() public {
@@ -238,14 +243,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     // Sweep should fail before clawback
     function testUsersSweepBeforeAfterClawback() public {
         _assertAbilityToSweep(provider, false);
-        _assertAbilityToSweep(recipient, false);
+        _assertAbilityToSweep(beneficiary, false);
         _assertAbilityToSweep(owner, false);
 
         _clawback(owner);
 
         // Only owner can sweep after clawback
         _assertAbilityToSweep(provider, false);
-        _assertAbilityToSweep(recipient, false);
+        _assertAbilityToSweep(beneficiary, false);
         _assertAbilityToSweep(owner, true);
     }
 
@@ -262,7 +267,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _clawback(owner);
 
         _depositTokensAndEth(provider, amountDeposit);
-        _assertReleasableAndProceedsFromReleaseEqual(0); // ensure recipient can't get it
+        _assertReleasableAndProceedsFromReleaseEqual(0); // ensure beneficiary can't get it
 
         // Sweep after deposit after clawback
         _assertProceedsFromSweepEqual(amountDeposit);
