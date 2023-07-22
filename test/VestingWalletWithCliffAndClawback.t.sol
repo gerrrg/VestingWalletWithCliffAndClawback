@@ -1,26 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
 import "forge-std/StdCheats.sol";
+import "forge-std/Test.sol";
+
+import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
 import "../src/VestingWalletWithCliffAndClawback.sol";
 import "../src/VestingWalletWithCliffAndClawbackFactory.sol";
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 contract VestingWalletWithCliffAndClawbackTest is Test {
     VestingWalletWithCliffAndClawbackFactory public factory;
     VestingWalletWithCliffAndClawback public wallet;
-
-    // Foundry does not handle overloaded functions well at all.
-    // Manually entering the function selectors here is the easiest workaround.
-    bytes4 constant releaseSelector = "\x86\xd1\xa6\x9f";
-    bytes4 constant releaseAddressSelector = "\x19\x16\x55\x87";
-    bytes4 constant clawbackSelector = "\x25\x26\xd9\x60";
-    bytes4 constant clawbackAddressSelector = "\xed\xf6\x85\x58";
-    bytes4 constant sweepSelector = "\x35\xfa\xa4\x16";
-    bytes4 constant sweepAddressSelector = "\x01\x68\x1a\x62";
-    bytes4 constant clawbackHasOccurredSelector = "\x37\x29\xc2\x21";
-    bytes4 constant clawbackHasOccurredAddressSelector = "\x0e\x9f\x2b\xea";
 
     address provider = vm.addr(0x1);
     address recipient = vm.addr(0x2);
@@ -47,109 +38,108 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         return (address(user).balance, fakeToken.balanceOf(user));
     }
 
-    function _clawback(address user) internal {
+    function _getReleasableAmount() internal view returns (uint256) {
+        uint256 amount = wallet.releasable();
+
+        // ETH and ERC20 amounts should be the same
+        assert(wallet.releasable(address(fakeToken)) == amount);
+
+        return amount;
+    }
+
+    function _assertAbilityTo(string memory funcName, address user, bool expectedSuccess) internal {
         vm.startPrank(user);
-        wallet.clawback();
-        wallet.clawback(address(fakeToken));
-        vm.stopPrank();
-    }
-
-    function _release(address user) internal {
-        vm.startPrank(user);
-        wallet.release();
-        wallet.release(address(fakeToken));
-        vm.stopPrank();
-    }
-
-    function _sweep(address user) internal {
-        vm.startPrank(user);
-        wallet.sweep();
-        wallet.sweep(address(fakeToken));
-        vm.stopPrank();
-    }
-
-    function _assertProceedsFromClawbackEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(owner);
-        _clawback(owner);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(owner);
-
-        // Owner gets their tokens back
-        assert(postBalanceEth - prevBalanceEth == amount);
-        assert(postBalanceToken - prevBalanceToken == amount);
-    }
-
-    function _assertProceedsFromReleaseEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(recipient);
-        _release(recipient);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(recipient);
-
-        // Owner gets their tokens back
-        assert(postBalanceEth - prevBalanceEth == amount);
-        assert(postBalanceToken - prevBalanceToken == amount);
-    }
-
-
-    function _assertProceedsFromSweepEqual(uint256 amount) internal {
-        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(owner);
-        _sweep(owner);
-        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(owner);
-
-        assert(postBalanceEth - prevBalanceEth == amount);
-        assert(postBalanceToken - prevBalanceToken == amount);
-    }
-
-    function _assertAbilityToRelease(bool expectedSuccess) internal {
         bool success;
-        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseSelector));
+
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "()")));
         assert(success == expectedSuccess);
 
-        (success, ) = address(wallet).call(abi.encodeWithSelector(releaseAddressSelector, address(fakeToken)));
+        (success, ) = address(wallet).call(abi.encodeWithSignature(string.concat(funcName, "(address)"), address(fakeToken)));
         assert(success == expectedSuccess);
+
+        vm.stopPrank();
+    }
+
+    function _assertAbilityToRelease(address user, bool expectedSuccess) internal {
+        _assertAbilityTo("release", user, expectedSuccess);
     }
 
     function _assertAbilityToClawback(address user, bool expectedSuccess) internal {
-        bool success;
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(clawbackSelector));
-        assert(success == expectedSuccess);
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(clawbackAddressSelector, address(fakeToken)));
-        assert(success == expectedSuccess);
+        _assertAbilityTo("clawback", user, expectedSuccess);
     }
 
     function _assertAbilityToSweep(address user, bool expectedSuccess) internal {
-        bool success;
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(sweepSelector));
-        assert(success == expectedSuccess);
-
-        vm.prank(user);
-        (success, ) = address(wallet).call(abi.encodeWithSelector(sweepAddressSelector, address(fakeToken)));
-        assert(success == expectedSuccess);
+        _assertAbilityTo("sweep", user, expectedSuccess);
     }
 
-    function _depositTokensAndEth(address user, uint256 amt) internal {
+    function _clawback(address user) internal {
+        _assertAbilityToClawback(user, true);
+    }
+
+    function _release(address user) internal {
+        _assertAbilityToRelease(user, true);
+    }
+
+    function _sweep(address user) internal {
+        _assertAbilityToSweep(user, true);
+    }
+
+    function _assertProceedsEqual(uint256 amount, address user, function (address) func) internal {
+        (uint256 prevBalanceEth, uint256 prevBalanceToken) = _getErc20AndEthBalances(user);
+        func(user);
+        (uint256 postBalanceEth, uint256 postBalanceToken) = _getErc20AndEthBalances(user);
+
+        assert(postBalanceEth - prevBalanceEth == amount);
+        assert(postBalanceToken - prevBalanceToken == amount);
+    }
+
+    function _assertProceedsFromClawbackEqual(uint256 amount) internal {
+        _assertProceedsEqual(amount, owner, _clawback);
+    }
+
+    function _assertProceedsFromReleaseEqual(uint256 amount) internal {
+        _assertProceedsEqual(amount, recipient, _release);
+    }
+
+    function _assertProceedsFromSweepEqual(uint256 amount) internal {
+        _assertProceedsEqual(amount, owner, _sweep);
+    }
+
+    function _assertReleasableAndProceedsFromReleaseEqual(uint256 amount) internal {
+        _assertReleasableIsAmount(amount);
+        _assertProceedsEqual(amount, recipient, _release);
+        _assertReleasableIsAmount(0);
+    }
+
+    function _assertProceedsFromReleaseEqualReleasable() internal {
+        uint256 amount = _getReleasableAmount();
+        _assertProceedsEqual(amount, recipient, _release);
+        _assertReleasableIsAmount(0);
+    }
+
+    function _depositTokensAndEth(address user, uint256 amount) internal {
         vm.prank(user);
-        (bool success, ) = address(wallet).call{value: amt}("");
+        (bool success, ) = address(wallet).call{value: amount}("");
         assert(success);
-        assert(amt == address(wallet).balance);
+        assert(amount == address(wallet).balance);
+
         vm.prank(user);
-        fakeToken.transfer(address(wallet), amt);
-        assert(amt == fakeToken.balanceOf(address(wallet)));
+        success = fakeToken.transfer(address(wallet), amount);
+        assert(success);
+        assert(amount == fakeToken.balanceOf(address(wallet)));
     }
 
     function setUp() public {
         uint64 startTime = uint64(block.timestamp) + startDelay;        
+
         factory = new VestingWalletWithCliffAndClawbackFactory();
         address walletAddress = factory.create(owner, recipient, startTime, vestDuration, cliffDuration);
         wallet = VestingWalletWithCliffAndClawback(payable(walletAddress));
+
         vm.deal(provider, 1000 ether);
         vm.deal(recipient, 1 ether);
 
-        fakeToken = new ERC20("Fake Token","FAKE");
+        fakeToken = new ERC20("Fake Token", "FAKE");
         deal(address(fakeToken), provider, amountDeposit * 2);
 
         _depositTokensAndEth(provider, amountDeposit);
@@ -163,26 +153,15 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         assert(wallet.cliffDuration() == cliffDuration);
     }
 
-    function testPreCliffReleasableZero() view public {
-        _assertReleasableIsAmount(0);
-    }
-
-    function testReleasableDuringCliffZero() public {
-        skip(startDelay);
-        _assertReleasableIsAmount(0);
-
-        skip(cliffDuration - 1);
-        _assertReleasableIsAmount(0);
-    }
-
     function testNothingReleasedBeforeCliff() public {
+        _assertReleasableAndProceedsFromReleaseEqual(0);
+
         skip(startDelay);
-        _assertReleasableIsAmount(0);
+        _assertReleasableAndProceedsFromReleaseEqual(0);
 
         skip(cliffDuration - 1);
-        _assertReleasableIsAmount(0);
+        _assertReleasableAndProceedsFromReleaseEqual(0);
     }
-
 
     function testReleasableAfterCliffNonZero() public {
         skip(startDelay + cliffDuration);
@@ -197,15 +176,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function testReleaseAfterCliff() public {
         skip(startDelay + cliffDuration);
         for (uint256 i = startDelay + cliffDuration; i < startDelay + vestDuration; i++) {
-            _assertAbilityToRelease(true);
+            _assertProceedsFromReleaseEqualReleasable();
             skip(1);
         }
     }
 
     function testReleasableAfterVestFullAmount() public {
         skip(startDelay + vestDuration);
-        assert(wallet.releasable() == amountDeposit);
-        assert(wallet.releasable(address(fakeToken)) == amountDeposit);
+        _assertReleasableAndProceedsFromReleaseEqual(amountDeposit);
     }
 
     // Only owner can clawback
@@ -214,6 +192,8 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertAbilityToClawback(recipient, false);
         _assertAbilityToClawback(owner, true);
     }
+
+    // TODO: Test release users too. But this feature must be added first!
 
     // Clawback before cliff should return everything
     function testImmediateClawback() public {
@@ -228,16 +208,14 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
         skip(startDelay + cliffDuration + vestDuration/2);
 
-        uint256 claimableNative = wallet.releasable();
-        uint256 claimableERC20 = wallet.releasable(address(fakeToken));
-        assert(claimableNative == claimableERC20);
-        assert(claimableNative != 0);
+        uint256 claimable = _getReleasableAmount();
+        assert(claimable != 0);
 
         // Run and verify clawback
-        _assertProceedsFromClawbackEqual(amountDeposit - claimableNative);
+        _assertProceedsFromClawbackEqual(amountDeposit - claimable);
 
         // Run and verify release
-        _assertProceedsFromReleaseEqual(claimableNative);
+        _assertReleasableAndProceedsFromReleaseEqual(claimable);
 
         _assertClawbackHasOccurred(true);
     }
@@ -252,7 +230,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _assertProceedsFromClawbackEqual(0);
 
         // Run and verify release
-        _assertProceedsFromReleaseEqual(amountDeposit);
+        _assertReleasableAndProceedsFromReleaseEqual(amountDeposit);
 
         _assertClawbackHasOccurred(true);
     }
@@ -265,6 +243,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
 
         _clawback(owner);
 
+        // Only owner can sweep after clawback
         _assertAbilityToSweep(provider, false);
         _assertAbilityToSweep(recipient, false);
         _assertAbilityToSweep(owner, true);
@@ -283,7 +262,7 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
         _clawback(owner);
 
         _depositTokensAndEth(provider, amountDeposit);
-        _assertReleasableIsAmount(0); // ensure recipient can't get it
+        _assertReleasableAndProceedsFromReleaseEqual(0); // ensure recipient can't get it
 
         // Sweep after deposit after clawback
         _assertProceedsFromSweepEqual(amountDeposit);
