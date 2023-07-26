@@ -11,8 +11,8 @@ contract VestingWalletWithCliffAndClawbackFactory {
 
     event VestingWalletCreated(
         address indexed walletAddress,
-        address ownerAddress,
-        address beneficiaryAddress,
+        address indexed ownerAddress,
+        address indexed beneficiaryAddress,
         uint64 startTimestamp,
         uint64 durationSeconds,
         uint64 cliffDurationSeconds
