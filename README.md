@@ -6,6 +6,7 @@ An extension of OpenZeppelin's [VestingWallet](https://github.com/OpenZeppelin/o
 * Add `owner`: contract is `Ownable2Step`
 * Add clawbacks: contract `owner` can clawback any unvested tokens
 * Add post-clawback sweeps: contract `owner` can sweep any excess tokens sent to the contract after clawback
+* Add release guard: only `beneficiary` can call `release()` and `release(token)`
 
 ## Compilation
 `forge build`
