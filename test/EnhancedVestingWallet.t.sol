@@ -18,12 +18,12 @@ import "forge-std/Test.sol";
 
 import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-import "../src/VestingWalletWithCliffAndClawback.sol";
-import "../src/VestingWalletWithCliffAndClawbackFactory.sol";
+import "../src/EnhancedVestingWallet.sol";
+import "../src/EnhancedVestingWalletFactory.sol";
 
-contract VestingWalletWithCliffAndClawbackTest is Test {
-    VestingWalletWithCliffAndClawbackFactory public factory;
-    VestingWalletWithCliffAndClawback public wallet;
+contract EnhancedVestingWalletTest is Test {
+    EnhancedVestingWalletFactory public factory;
+    EnhancedVestingWallet public wallet;
 
     address provider = vm.addr(0x1);
     address beneficiary = vm.addr(0x2);
@@ -144,9 +144,9 @@ contract VestingWalletWithCliffAndClawbackTest is Test {
     function setUp() public {
         uint64 startTime = uint64(block.timestamp) + startDelay;        
 
-        factory = new VestingWalletWithCliffAndClawbackFactory();
+        factory = new EnhancedVestingWalletFactory();
         address walletAddress = factory.create(owner, beneficiary, startTime, vestDuration, cliffDuration);
-        wallet = VestingWalletWithCliffAndClawback(payable(walletAddress));
+        wallet = EnhancedVestingWallet(payable(walletAddress));
 
         vm.deal(provider, 1000 ether);
         vm.deal(beneficiary, 1 ether);
