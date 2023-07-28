@@ -18,7 +18,7 @@ import "./VestingWalletWithCliff.sol";
 import "./VestingWalletWithReleaseGuard.sol";
 
 /**
- * @title VestingWalletWithCliffAndClawback
+ * @title EnhancedVestingWallet
  * @dev This contract builds on OpenZeppelin's VestingWallet. See comments in VestingWallet for base details.
  *
  * This contract adds the following functionality:
@@ -28,7 +28,7 @@ import "./VestingWalletWithReleaseGuard.sol";
  *   - Add a vesting cliff: `beneficiary` cannot claim any vested tokens until a cliff duration has elapsed
  *   - Add a release guard: only `beneficiary` can release vested funds; no one can force funds upon `beneficiary`
  */
-contract VestingWalletWithCliffAndClawback is
+contract EnhancedVestingWallet is
     VestingWalletWithClawback,
     VestingWalletWithCliff,
     VestingWalletWithReleaseGuard

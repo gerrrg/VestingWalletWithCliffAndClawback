@@ -13,13 +13,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 pragma solidity ^0.8.13;
 
-import "./VestingWalletWithCliffAndClawback.sol";
+import "./EnhancedVestingWallet.sol";
 
 /**
- * @title VestingWalletWithCliffAndClawbackFactory
- * @dev Factory for VestingWalletWithCliffAndClawback. See VestingWalletWithCliffAndClawback.sol for details.
+ * @title EnhancedVestingWalletFactory
+ * @dev Factory for EnhancedVestingWallet. See EnhancedVestingWallet.sol for details.
  */
-contract VestingWalletWithCliffAndClawbackFactory {
+contract EnhancedVestingWalletFactory {
 
     event VestingWalletCreated(
         address indexed walletAddress,
@@ -33,7 +33,7 @@ contract VestingWalletWithCliffAndClawbackFactory {
     mapping(address => bool) private _isFromFactory;
 
     /**
-     * @dev Creates a new VestingWalletWithCliffAndClawback.
+     * @dev Creates a new EnhancedVestingWallet.
      */
     function create(
         address ownerAddress,
@@ -42,7 +42,7 @@ contract VestingWalletWithCliffAndClawbackFactory {
         uint64 durationSeconds,
         uint64 cliffDurationSeconds
     ) public virtual returns (address) {
-        VestingWalletWithCliffAndClawback wallet = new VestingWalletWithCliffAndClawback(
+        EnhancedVestingWallet wallet = new EnhancedVestingWallet(
             ownerAddress,
             beneficiaryAddress,
             startTimestamp,

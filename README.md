@@ -1,4 +1,4 @@
-# VestingWalletWithCliffAndClawback
+# EnhancedVestingWallet
 
 ## Overview
 An extension of OpenZeppelin's [VestingWallet](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/finance/VestingWallet.sol) contract. This contract adds the following functionality:
