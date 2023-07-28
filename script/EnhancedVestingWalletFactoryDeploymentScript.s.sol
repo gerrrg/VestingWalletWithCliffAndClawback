@@ -14,11 +14,17 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
+import "../src/EnhancedVestingWalletFactory.sol";
 
-contract EnhancedVestingWalletScript is Script {
-    function setUp() public {}
-
+contract EnhancedVestingWalletFactoryDeploymentScript is Script {
     function run() public {
-        vm.broadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+    
+        EnhancedVestingWalletFactory factory = new EnhancedVestingWalletFactory();
+        console.log("Factory deployed to:");
+        console.log(address(factory));
+
+        vm.stopBroadcast();
     }
 }

@@ -16,3 +16,16 @@ An extension of OpenZeppelin's [VestingWallet](https://github.com/OpenZeppelin/o
 
 ## Linting
 `solhint ./src/*.sol ./test/*.sol`
+
+## Deployment
+```
+# Setup an env file
+cp sample.env .env
+# Now, edit your .env file with RPC address, private key, and Etherscan API key
+
+# To load the variables in the .env file
+source .env
+
+# To deploy and verify our contract
+forge script script/EnhancedVestingWalletFactoryDeploymentScript.s.sol:EnhancedVestingWalletFactoryDeploymentScript --rpc-url $RPC_URL --broadcast --verify -vvvv
+```
